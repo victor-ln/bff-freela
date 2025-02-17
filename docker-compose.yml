@@ -1,0 +1,10 @@
+services:
+  postgres:
+    image: postgres
+    environment:
+      - POSTGRES_DB=$DATABASE_DB
+      - POSTGRES_USER=$DATABASE_USER
+      - POSTGRES_PASSWORD=$DATABASE_PASSWORD
+      - POSTGRES_PORT=$DATABASE_PORT
+    ports:
+      - "$DATABASE_PORT:$DATABASE_PORT"
