@@ -13,7 +13,9 @@ export class BackendService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.backendUrl = this.configService.getOrThrow<string>('BACKEND_URL');
+    const url = this.configService.getOrThrow<string>('BACKEND_URL');
+    this.backendUrl = url.startsWith('http') ? url : `http://${url}`;
+    this.logger.log(`Backend URL configured: ${this.backendUrl}`);
   }
 
   get<T>(endpoint: string): Observable<T> {

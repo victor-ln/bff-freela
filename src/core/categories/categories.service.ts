@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { BackendService } from '../../common/http/backend.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -31,7 +31,12 @@ export class CategoriesService {
 
   findAllActive(): Observable<CategoryResponseDto[]> {
     this.logger.log('Fetching all active categories');
-    return this.backendService.get<CategoryResponseDto[]>('/categories/active');
+    const queryParams = new URLSearchParams({
+      ativo: 'true',
+      limit: '1000',
+    });
+    return this.backendService.get<any>(`/categories?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   findOne(id: number): Observable<CategoryResponseDto> {
@@ -41,7 +46,20 @@ export class CategoriesService {
 
   findByTipo(tipo: string): Observable<CategoryResponseDto> {
     this.logger.log(`Finding category by tipo: ${tipo}`);
-    return this.backendService.get<CategoryResponseDto>(`/categories/by-tipo/${tipo}`);
+    const queryParams = new URLSearchParams({
+      search: tipo,
+      limit: '1',
+    });
+    return this.backendService.get<any>(`/categories?${queryParams}`)
+      .pipe(
+        map(response => {
+          const data = response.dados?.data || [];
+          if (data.length === 0) {
+            throw new Error('Category not found');
+          }
+          return data[0];
+        })
+      );
   }
 
   update(id: number, updateCategoryDto: UpdateCategoryDto): Observable<CategoryResponseDto> {

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { BackendService } from '../../common/http/backend.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
@@ -32,17 +32,32 @@ export class ServicesService {
 
   findByStatus(status: ServiceStatus): Observable<ServiceResponseDto[]> {
     this.logger.log(`Fetching services by status: ${status}`);
-    return this.backendService.get<ServiceResponseDto[]>(`/services/by-status/${status}`);
+    const queryParams = new URLSearchParams({
+      status: status,
+      limit: '1000',
+    });
+    return this.backendService.get<any>(`/services?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   findActive(): Observable<ServiceResponseDto[]> {
     this.logger.log('Fetching active services');
-    return this.backendService.get<ServiceResponseDto[]>('/services/active');
+    const queryParams = new URLSearchParams({
+      status: ServiceStatus.ATIVO,
+      limit: '1000',
+    });
+    return this.backendService.get<any>(`/services?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   findByCategory(categoriaId: number): Observable<ServiceResponseDto[]> {
     this.logger.log(`Fetching services by category: ${categoriaId}`);
-    return this.backendService.get<ServiceResponseDto[]>(`/services/category/${categoriaId}`);
+    const queryParams = new URLSearchParams({
+      categoriaId: categoriaId.toString(),
+      limit: '1000',
+    });
+    return this.backendService.get<any>(`/services?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   findByPriceRange(minPrice: number, maxPrice: number): Observable<ServiceResponseDto[]> {
@@ -50,8 +65,10 @@ export class ServicesService {
     const queryParams = new URLSearchParams({
       minPrice: minPrice.toString(),
       maxPrice: maxPrice.toString(),
+      limit: '1000',
     });
-    return this.backendService.get<ServiceResponseDto[]>(`/services/price-range?${queryParams}`);
+    return this.backendService.get<any>(`/services?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   findOne(id: number): Observable<ServiceResponseDto> {

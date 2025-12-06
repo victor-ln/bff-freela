@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { BackendService } from '../../common/http/backend.service';
 import { CreateSocialNetworksTypeDto } from './dto/create-social-networks-type.dto';
 import { UpdateSocialNetworksTypeDto } from './dto/update-social-networks-type.dto';
@@ -31,7 +31,12 @@ export class SocialNetworksTypesService {
 
   findAllActive(): Observable<SocialNetworksTypeResponseDto[]> {
     this.logger.log('Fetching all active social networks types');
-    return this.backendService.get<SocialNetworksTypeResponseDto[]>('/social-networks-types/active');
+    const queryParams = new URLSearchParams({
+      ativo: 'true',
+      limit: '1000',
+    });
+    return this.backendService.get<any>(`/social-networks-types?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   findOne(id: number): Observable<SocialNetworksTypeResponseDto> {
@@ -41,7 +46,20 @@ export class SocialNetworksTypesService {
 
   findByTipo(tipo: string): Observable<SocialNetworksTypeResponseDto> {
     this.logger.log(`Finding social networks type by tipo: ${tipo}`);
-    return this.backendService.get<SocialNetworksTypeResponseDto>(`/social-networks-types/by-tipo/${tipo}`);
+    const queryParams = new URLSearchParams({
+      search: tipo,
+      limit: '1',
+    });
+    return this.backendService.get<any>(`/social-networks-types?${queryParams}`)
+      .pipe(
+        map(response => {
+          const data = response.dados?.data || [];
+          if (data.length === 0) {
+            throw new Error('Social network type not found');
+          }
+          return data[0];
+        })
+      );
   }
 
   update(id: number, updateSocialNetworksTypeDto: UpdateSocialNetworksTypeDto): Observable<SocialNetworksTypeResponseDto> {

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { BackendService } from '../../common/http/backend.service';
 import { CreateSocialNetworkDto } from './dto/create-social-network.dto';
 import { UpdateSocialNetworkDto } from './dto/update-social-network.dto';
@@ -31,12 +31,22 @@ export class SocialNetworksService {
 
   findByClient(clienteId: number): Observable<SocialNetworkResponseDto[]> {
     this.logger.log(`Fetching social networks for client: ${clienteId}`);
-    return this.backendService.get<SocialNetworkResponseDto[]>(`/social-networks/client/${clienteId}`);
+    const queryParams = new URLSearchParams({
+      clienteId: clienteId.toString(),
+      limit: '1000',
+    });
+    return this.backendService.get<any>(`/social-networks?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   findByType(tipoId: number): Observable<SocialNetworkResponseDto[]> {
     this.logger.log(`Fetching social networks by type: ${tipoId}`);
-    return this.backendService.get<SocialNetworkResponseDto[]>(`/social-networks/type/${tipoId}`);
+    const queryParams = new URLSearchParams({
+      tipoId: tipoId.toString(),
+      limit: '1000',
+    });
+    return this.backendService.get<any>(`/social-networks?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   findOne(id: number): Observable<SocialNetworkResponseDto> {

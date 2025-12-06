@@ -6,20 +6,36 @@ import { lastValueFrom } from 'rxjs';
 import { FreelancersService } from '../../core/freelancers/freelancers.service';
 import { Role } from '../roles/roles.enum';
 
+/**
+ * Payload do JWT
+ */
 export interface JwtPayload {
-  sub: number;
-  username: string;
-  roles?: Role[];
-  iat?: number;
-  exp?: number;
+  sub: number;      // freelancer.id (É o userId)
+  username: string; // Nome do freelancer
+  email?: string;   // Email do freelancer
+  iat?: number;     // Issued at
+  exp?: number;     // Expiration
 }
 
+/**
+ * Usuário autenticado
+ * 
+ * IMPORTANTE: userId É o freelancer.id (não há separação)
+ */
 export interface AuthenticatedUser {
-  userId: number;
-  username: string;
-  roles: Role[];
+  userId: number;   // É o freelancer.id
+  username: string; // Nome do freelancer
+  roles: Role[];    // Roles/permissões do freelancer
 }
 
+/**
+ * JWT Strategy para validação de tokens
+ * 
+ * IMPORTANTE:
+ * - payload.sub contém o freelancer.id (que É o userId)
+ * - Busca o freelancer no backend para validar se ainda existe e está ativo
+ * - Retorna AuthenticatedUser que será injetado nas rotas protegidas
+ */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
@@ -33,26 +49,35 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
+  /**
+   * Valida o token JWT e retorna o usuário autenticado
+   * 
+   * @param payload - Payload decodificado do JWT
+   * @returns Dados do usuário autenticado para uso nas rotas
+   */
   async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
     try {
-      // Buscar o usuário no backend usando Observable convertido para Promise
-      const user = await lastValueFrom(
+      // payload.sub É o freelancer.id (que É o userId)
+      const freelancer = await lastValueFrom(
         this.freelancersService.findById(payload.sub)
       );
       
-      if (!user) {
-        throw new UnauthorizedException('Token inválido - usuário não encontrado');
+      // Valida se o freelancer ainda existe
+      if (!freelancer) {
+        throw new UnauthorizedException('Token inválido - freelancer não encontrado');
       }
 
-      // Verificar se o usuário ainda está ativo
-      if (!user.isActive) {
-        throw new UnauthorizedException('Usuário inativo');
+      // Valida se o freelancer ainda está ativo
+      if (!freelancer.ativo) {
+        throw new UnauthorizedException('Freelancer inativo');
       }
 
+      // Retorna dados do usuário autenticado
+      // IMPORTANTE: userId É o freelancer.id (não há separação)
       return {
-        userId: payload.sub,
-        username: payload.username,
-        roles: user.roles || [Role.FREELANCER], // Default role
+        userId: freelancer.id, // freelancer.id É o userId
+        username: freelancer.nome,
+        roles: freelancer.roles || [Role.FREELANCER], // Role padrão se não houver
       };
     } catch (error) {
       if (error instanceof UnauthorizedException) {

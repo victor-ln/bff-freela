@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { BackendService } from '../../common/http/backend.service';
 import { CreateKanbanDto } from './dto/create-kanban.dto';
 import { UpdateKanbanDto } from './dto/update-kanban.dto';
@@ -45,12 +45,30 @@ export class KanbansService {
 
   findByProposal(propostaId: number): Observable<KanbanResponseDto> {
     this.logger.log(`Fetching kanban for proposal: ${propostaId}`);
-    return this.backendService.get<KanbanResponseDto>(`/kanbans/proposal/${propostaId}`);
+    const queryParams = new URLSearchParams({
+      propostaId: propostaId.toString(),
+      limit: '1',
+    });
+    return this.backendService.get<any>(`/kanbans?${queryParams}`)
+      .pipe(
+        map(response => {
+          const data = response.dados?.data || [];
+          if (data.length === 0) {
+            throw new Error('Kanban not found');
+          }
+          return data[0];
+        })
+      );
   }
 
   findActive(): Observable<KanbanResponseDto[]> {
     this.logger.log('Fetching active kanbans');
-    return this.backendService.get<KanbanResponseDto[]>('/kanbans/active');
+    const queryParams = new URLSearchParams({
+      ativo: 'true',
+      limit: '1000',
+    });
+    return this.backendService.get<any>(`/kanbans?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   update(id: number, updateKanbanDto: UpdateKanbanDto): Observable<KanbanResponseDto> {
@@ -82,17 +100,35 @@ export class KanbansService {
 
   findTasksByStatus(kanbanId: number, status: TaskStatus): Observable<TaskResponseDto[]> {
     this.logger.log(`Fetching tasks by status ${status} for kanban: ${kanbanId}`);
-    return this.backendService.get<TaskResponseDto[]>(`/kanbans/${kanbanId}/tasks/status/${status}`);
+    const queryParams = new URLSearchParams({
+      kanbanId: kanbanId.toString(),
+      status: status,
+      limit: '1000',
+    });
+    return this.backendService.get<any>(`/kanbans/tasks?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   findTasksByPriority(kanbanId: number, priority: TaskPriority): Observable<TaskResponseDto[]> {
     this.logger.log(`Fetching tasks by priority ${priority} for kanban: ${kanbanId}`);
-    return this.backendService.get<TaskResponseDto[]>(`/kanbans/${kanbanId}/tasks/priority/${priority}`);
+    const queryParams = new URLSearchParams({
+      kanbanId: kanbanId.toString(),
+      prioridade: priority,
+      limit: '1000',
+    });
+    return this.backendService.get<any>(`/kanbans/tasks?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   findOverdueTasks(kanbanId: number): Observable<TaskResponseDto[]> {
     this.logger.log(`Fetching overdue tasks for kanban: ${kanbanId}`);
-    return this.backendService.get<TaskResponseDto[]>(`/kanbans/${kanbanId}/tasks/overdue`);
+    const queryParams = new URLSearchParams({
+      kanbanId: kanbanId.toString(),
+      overdue: 'true',
+      limit: '1000',
+    });
+    return this.backendService.get<any>(`/kanbans/tasks?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   findTask(kanbanId: number, taskId: number): Observable<TaskResponseDto> {

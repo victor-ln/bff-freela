@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { BackendService } from '../../common/http/backend.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
@@ -32,7 +32,12 @@ export class RolesService {
 
   findAllActive(): Observable<RoleResponseDto[]> {
     this.logger.log('Fetching all active roles');
-    return this.backendService.get<RoleResponseDto[]>('/roles/active');
+    const queryParams = new URLSearchParams({
+      ativo: 'true',
+      limit: '1000',
+    });
+    return this.backendService.get<any>(`/roles?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   findOne(id: number): Observable<RoleResponseDto> {
@@ -42,7 +47,20 @@ export class RolesService {
 
   findByName(name: string): Observable<RoleResponseDto> {
     this.logger.log(`Finding role by name: ${name}`);
-    return this.backendService.get<RoleResponseDto>(`/roles/by-name/${name}`);
+    const queryParams = new URLSearchParams({
+      search: name,
+      limit: '1',
+    });
+    return this.backendService.get<any>(`/roles?${queryParams}`)
+      .pipe(
+        map(response => {
+          const data = response.dados?.data || [];
+          if (data.length === 0) {
+            throw new Error('Role not found');
+          }
+          return data[0];
+        })
+      );
   }
 
   update(id: number, updateRoleDto: UpdateRoleDto): Observable<RoleResponseDto> {

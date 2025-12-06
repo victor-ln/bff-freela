@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { BackendService } from '../../common/http/backend.service';
 import { CreateTemplateDto } from './dto/create-template.dto';
 import { UpdateTemplateDto } from './dto/update-template.dto';
@@ -33,12 +33,22 @@ export class TemplatesService {
 
   findByStatus(status: TemplateStatus): Observable<TemplateResponseDto[]> {
     this.logger.log(`Fetching templates by status: ${status}`);
-    return this.backendService.get<TemplateResponseDto[]>(`/templates/by-status/${status}`);
+    const queryParams = new URLSearchParams({
+      status: status,
+      limit: '1000',
+    });
+    return this.backendService.get<any>(`/templates?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   findApproved(): Observable<TemplateResponseDto[]> {
     this.logger.log('Fetching approved templates');
-    return this.backendService.get<TemplateResponseDto[]>(`/templates/approved`);
+    const queryParams = new URLSearchParams({
+      status: TemplateStatus.ACTIVE,
+      limit: '1000',
+    });
+    return this.backendService.get<any>(`/templates?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   findOne(id: number): Observable<TemplateResponseDto> {

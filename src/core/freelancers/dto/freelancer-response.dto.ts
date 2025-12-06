@@ -3,22 +3,35 @@ import { Role } from '../../../auth/roles/roles.enum';
 import { AddressResponseDto } from '../../addresses/dto/address-response.dto';
 
 export class FreelancerResponseDto {
-  @ApiProperty()
+  @ApiProperty({
+    description: 'ID do freelancer (também é o userId)',
+    example: 1,
+  })
   id: number;
 
-  @ApiProperty()
-  userId: number;
-
-  @ApiProperty()
+  @ApiProperty({
+    description: 'Nome completo do freelancer',
+    example: 'João Silva',
+  })
   nome: string;
 
-  senha: string;
-
-  @ApiProperty()
+  @ApiProperty({
+    description: 'Email do freelancer (usado como username no login)',
+    example: 'joao@email.com',
+  })
   email: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'CPF ou CNPJ do freelancer',
+    example: '123.456.789-00',
+  })
   cpfCnpj: string;
+
+  @ApiProperty({
+    description: 'Status ativo/inativo do freelancer',
+    example: true,
+  })
+  ativo: boolean;
 
   @ApiProperty({
     description: 'Endereço do freelancer',
@@ -26,15 +39,15 @@ export class FreelancerResponseDto {
   })
   endereco: AddressResponseDto;
 
-  @ApiProperty()
-  isActive: boolean;
-
-  @ApiProperty({ enum: Role, isArray: true })
+  @ApiProperty({
+    description: 'Roles/permissões do freelancer',
+    enum: Role,
+    isArray: true,
+    example: ['Freelancer'],
+  })
   roles: Role[];
 
-  @ApiProperty()
-  createdAt: Date;
-
-  @ApiProperty()
-  updatedAt: Date;
+  // Campo senha - APENAS para uso interno no AuthService
+  // Nunca deve ser exposto na API pública
+  senha?: string;
 }

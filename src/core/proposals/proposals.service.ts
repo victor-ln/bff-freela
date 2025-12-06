@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { BackendService } from '../../common/http/backend.service';
 import { CreateProposalDto } from './dto/create-proposal.dto';
 import { UpdateProposalDto } from './dto/update-proposal.dto';
@@ -35,22 +35,42 @@ export class ProposalsService {
 
   findByStatus(status: ProposalStatus): Observable<ProposalResponseDto[]> {
     this.logger.log(`Fetching proposals by status: ${status}`);
-    return this.backendService.get<ProposalResponseDto[]>(`/proposals/by-status/${status}`);
+    const queryParams = new URLSearchParams({
+      status: status,
+      limit: '1000',
+    });
+    return this.backendService.get<any>(`/proposals?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   findByClient(clienteId: number): Observable<ProposalResponseDto[]> {
     this.logger.log(`Fetching proposals for client: ${clienteId}`);
-    return this.backendService.get<ProposalResponseDto[]>(`/proposals/client/${clienteId}`);
+    const queryParams = new URLSearchParams({
+      clienteId: clienteId.toString(),
+      limit: '1000',
+    });
+    return this.backendService.get<any>(`/proposals?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   findAccepted(): Observable<ProposalResponseDto[]> {
     this.logger.log('Fetching accepted proposals');
-    return this.backendService.get<ProposalResponseDto[]>('/proposals/accepted');
+    const queryParams = new URLSearchParams({
+      status: ProposalStatus.ACCEPTED,
+      limit: '1000',
+    });
+    return this.backendService.get<any>(`/proposals?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   findDrafts(): Observable<ProposalResponseDto[]> {
     this.logger.log('Fetching draft proposals');
-    return this.backendService.get<ProposalResponseDto[]>('/proposals/drafts');
+    const queryParams = new URLSearchParams({
+      status: ProposalStatus.PENDING,
+      limit: '1000',
+    });
+    return this.backendService.get<any>(`/proposals?${queryParams}`)
+      .pipe(map(response => response.dados?.data || []));
   }
 
   findOne(id: number): Observable<ProposalResponseDto> {

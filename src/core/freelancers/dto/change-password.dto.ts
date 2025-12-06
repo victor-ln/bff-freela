@@ -1,21 +1,13 @@
-import { IsString, IsNotEmpty, Length } from 'class-validator';
+import { IsString, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ChangePasswordDto {
   @ApiProperty({
-    description: 'Senha atual',
-    example: 'senhaatual123',
+    description: 'Nova senha já criptografada (hash bcrypt)',
+    example: '$2a$12$KIXqF5P.yZ8vW0X9QHxD7eJ5P9Y3XqZ8vW0X9QHxD7eJ5P9Y3XqZ',
+    required: true,
   })
   @IsString()
   @IsNotEmpty()
-  currentPassword: string;
-
-  @ApiProperty({
-    description: 'Nova senha',
-    example: 'novasenha123',
-  })
-  @IsString()
-  @IsNotEmpty()
-  @Length(6, 50)
-  newPassword: string;
+  novaSenhaHash: string;
 }

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { BackendService } from '../../common/http/backend.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
@@ -46,11 +46,37 @@ export class ClientsService {
 
   findByEmail(email: string): Observable<ClientResponseDto> {
     this.logger.log(`Finding client by email: ${email}`);
-    return this.backendService.get<ClientResponseDto>(`/clients/by-email/${email}`);
+    const queryParams = new URLSearchParams({
+      search: email,
+      limit: '1',
+    });
+    return this.backendService.get<any>(`/clients?${queryParams}`)
+      .pipe(
+        map(response => {
+          const data = response.dados?.data || [];
+          if (data.length === 0) {
+            throw new Error('Client not found');
+          }
+          return data[0];
+        })
+      );
   }
 
   findByCpfCnpj(cpfCnpj: string): Observable<ClientResponseDto> {
     this.logger.log(`Finding client by CPF/CNPJ: ${cpfCnpj}`);
-    return this.backendService.get<ClientResponseDto>(`/clients/by-document/${cpfCnpj}`);
+    const queryParams = new URLSearchParams({
+      search: cpfCnpj,
+      limit: '1',
+    });
+    return this.backendService.get<any>(`/clients?${queryParams}`)
+      .pipe(
+        map(response => {
+          const data = response.dados?.data || [];
+          if (data.length === 0) {
+            throw new Error('Client not found');
+          }
+          return data[0];
+        })
+      );
   }
 }
