@@ -24,6 +24,7 @@ import { FreelancersService } from './freelancers.service';
 import { CreateFreelancerDto } from './dto/create-freelancer.dto';
 import { UpdateFreelancerDto } from './dto/update-freelancer.dto';
 import { FreelancerResponseDto } from './dto/freelancer-response.dto';
+import { UpdateFreelancerRolesDto } from './dto/update-freelancer-roles.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { PaginationDto, PaginatedResponseDto } from 'src/common/dto/pagination.dto';
 import { Roles } from 'src/auth/roles/roles.decorator';
@@ -217,9 +218,10 @@ export class FreelancersController {
   })
   updateRoles(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { roles: string[] }
+    @Body() updateFreelancerRolesDto: UpdateFreelancerRolesDto
   ): Observable<FreelancerResponseDto> {
-    return this.freelancersService.updateRoles(id, body.roles);
+    // O service espera o DTO completo, não apenas o array
+    return this.freelancersService.updateRoles(id, updateFreelancerRolesDto);
   }
 
   @Delete(':id')

@@ -1,19 +1,24 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Observable, map } from 'rxjs';
+import { Observable, map, from } from 'rxjs';
 import { BackendService } from '../../common/http/backend.service';
 import { CreateFreelancerDto } from './dto/create-freelancer.dto';
 import { UpdateFreelancerDto } from './dto/update-freelancer.dto';
 import { FreelancerResponseDto } from './dto/freelancer-response.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { BcryptAdapter } from '../../auth/adapters/bcrypt.adapter';
 import { UpdateFreelancerRolesDto } from './dto/update-freelancer-roles.dto';
 import { PaginationDto, PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { Role } from 'src/auth/roles/roles.enum';
+import { switchMap } from 'rxjs/operators';
 
 @Injectable()
 export class FreelancersService {
   private readonly logger = new Logger(FreelancersService.name);
 
-  constructor(private readonly backendService: BackendService) {}
+  constructor(
+    private readonly backendService: BackendService,
+    private readonly bcryptAdapter: BcryptAdapter,
+  ) {}
 
   /**
    * Cria um novo freelancer (Admin)
@@ -153,13 +158,20 @@ export class FreelancersService {
    */
   register(createFreelancerDto: CreateFreelancerDto): Observable<FreelancerResponseDto> {
     this.logger.log(`Public registration for freelancer: ${createFreelancerDto.nome}`);
-    
-    const registrationData = {
-      ...createFreelancerDto,
-      roles: ['Freelancer'], // Role padrão para novos cadastros
-    };
-    
-    return this.backendService.post<any>('/freelancer/register', registrationData).pipe(
+
+    return from(this.bcryptAdapter.encrypt(createFreelancerDto.senha)).pipe(
+      // 2. 'switchMap' aguarda o hash e troca para a requisição HTTP
+      switchMap(hashedPassword => {
+        const registrationData = {
+          ...createFreelancerDto,
+          senha: hashedPassword,
+          roles: ['Freelancer'], 
+        };
+        
+        // 3. Realiza o POST no backend
+        return this.backendService.post<any>('/freelancer/register', registrationData);
+      }),
+      // 4. Formata a resposta final
       map(response => this.extractDataFromResponse(response))
     );
   }

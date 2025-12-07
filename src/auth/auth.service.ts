@@ -29,7 +29,7 @@ export class AuthService {
     );
     
     // Valida credenciais
-    if (!freelancer || !this.passwordService.compare(pass, freelancer.?senha)) {
+    if (!freelancer || !this.passwordService.compare(pass, freelancer?.senha || '')) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
