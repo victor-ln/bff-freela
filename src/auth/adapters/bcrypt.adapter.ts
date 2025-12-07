@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { compareSync, hashSync } from 'bcrypt';
-import { PasswordGateway } from '../gateways/password.gateway';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
-export class BcryptAdapter implements PasswordGateway {
-  private readonly saltRounds = 12;
+export class BcryptAdapter {
+  private SALT_ROUNDS = 10;
 
-  compare(plainPassword: string, encryptedPassword: string): boolean {
-    return compareSync(plainPassword, encryptedPassword);
+  async encrypt(password: string): Promise<string> {
+    // TEM QUE retornar o hash, não a senha original
+    return await bcrypt.hash(password, this.SALT_ROUNDS);
   }
 
-  encrypt(plainPassword: string): string {
-    return hashSync(plainPassword, this.saltRounds);
+  async compare(password: string, hash: string): Promise<boolean> {
+    return await bcrypt.compare(password, hash);
   }
 }

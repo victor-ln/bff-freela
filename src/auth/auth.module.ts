@@ -13,7 +13,7 @@ import { RolesGuard } from './guards/roles/roles.guard';
 
 @Module({
   imports: [
-    FreelancersModule,
+    forwardRef(() => FreelancersModule),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

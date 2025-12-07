@@ -6,7 +6,10 @@ import { BackendService } from '../../common/http/backend.service';
 import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
-  imports: [HttpModule, AuthModule],
+  imports: [
+    HttpModule,
+    forwardRef(() => AuthModule),
+  ],
   controllers: [FreelancersController],
   providers: [FreelancersService, BackendService],
   exports: [FreelancersService],

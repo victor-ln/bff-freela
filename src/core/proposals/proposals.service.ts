@@ -21,10 +21,11 @@ export class ProposalsService {
     return this.backendService.post<ProposalResponseDto>('/proposals', createProposalDto);
   }
 
-  findAll(pagination: PaginationDto): Observable<PaginatedResponseDto<ProposalResponseDto>> {
+  findAll(userId: number, pagination: PaginationDto): Observable<PaginatedResponseDto<ProposalResponseDto>> {
     this.logger.log(`Fetching proposals with pagination: page=${pagination.page}, limit=${pagination.limit}`);
     
     const queryParams = new URLSearchParams({
+      freelancerId: userId.toString(),
       page: pagination.page.toString(),
       limit: pagination.limit.toString(),
       ...(pagination.search && { search: pagination.search }),

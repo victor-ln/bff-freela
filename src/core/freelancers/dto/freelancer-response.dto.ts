@@ -30,7 +30,7 @@ export class FreelancerResponseDto {
   @ApiProperty({
     description: 'Status ativo/inativo do freelancer',
     example: true,
-  })
+})
   ativo: boolean;
 
   @ApiProperty({

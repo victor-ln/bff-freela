@@ -25,6 +25,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth/jwt-auth.guard';
 import { BackendService } from './common/http/backend.service';
 import { RolesGuard } from './auth/guards/roles/roles.guard';
 import { ServicesModule } from './core/services/services.module';
+import { DashboardModule } from './core/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { ServicesModule } from './core/services/services.module';
     SocialNetworksModule,
     SocialNetworksTypesModule,
     TemplatesModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [

@@ -28,6 +28,8 @@ import { ProposalResponseDto } from './dto/proposal-response.dto';
 import { AcceptProposalDto } from './dto/accept-proposal.dto';
 import { GenerateContractDto } from './dto/generate-contract.dto';
 import { SendEmailDto } from './dto/send-email.dto';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import type { AuthenticatedUser } from 'src/auth/strategies/jwt.strategy';
 import { PaginationDto, PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { Roles } from '../../auth/roles/roles.decorator';
 import { Role } from '../../auth/roles/roles.enum';
@@ -70,8 +72,11 @@ export class ProposalsController {
     description: 'Lista de propostas recuperada com sucesso',
     type: PaginatedResponseDto<ProposalResponseDto>
   })
-  findAll(@Query() pagination: PaginationDto): Observable<PaginatedResponseDto<ProposalResponseDto>> {
-    return this.proposalsService.findAll(pagination);
+  findAll(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() pagination: PaginationDto
+  ): Observable<PaginatedResponseDto<ProposalResponseDto>> {
+    return this.proposalsService.findAll(user.userId, pagination);
   }
 
   @Get('accepted')

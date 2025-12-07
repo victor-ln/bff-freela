@@ -29,6 +29,7 @@ export class AuthService {
     );
     
     // Valida credenciais
+    console.log('freelancer: ', freelancer);
     if (!freelancer || !this.passwordService.compare(pass, freelancer?.senha || '')) {
       throw new UnauthorizedException('Credenciais inválidas');
     }

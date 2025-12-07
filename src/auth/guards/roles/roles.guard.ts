@@ -24,7 +24,9 @@ export class RolesGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
-    const user: AuthenticatedUser = request.user;
+    const user: any = request.user; // Usando any aqui temporariamente para flexibilidade no acesso às roles
+
+    console.log("Usuário no Guard:", user);
 
     if (!user) {
       throw new ForbiddenException('Usuário não autenticado');
@@ -34,12 +36,19 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('Usuário sem permissões definidas');
     }
 
-    const hasRole = requiredRoles.some((role) => user.roles.includes(role));
+    const userRoleNames = user.roles.map((role: any) => {
+      return typeof role === 'string' ? role : role.nome;
+    });
+
+    console.log("Roles extraídas:", userRoleNames);
+    console.log("Roles necessárias:", requiredRoles);
+
+    const hasRole = requiredRoles.some((role) => userRoleNames.includes(role));
 
     if (!hasRole) {
       throw new ForbiddenException(
         `Acesso negado. Roles necessárias: ${requiredRoles.join(', ')}. ` +
-        `Roles do usuário: ${user.roles.join(', ')}`,
+        `Roles do usuário: ${userRoleNames.join(', ')}`,
       );
     }
 
