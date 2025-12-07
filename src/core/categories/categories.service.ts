@@ -12,9 +12,17 @@ export class CategoriesService {
 
   constructor(private readonly backendService: BackendService) {}
 
-  create(createCategoryDto: CreateCategoryDto): Observable<CategoryResponseDto> {
-    this.logger.log(`Creating new category: ${createCategoryDto.tipo}`);
-    return this.backendService.post<CategoryResponseDto>('/categories', createCategoryDto);
+  create(createCategoryDto: CreateCategoryDto, userId: number): Observable<CategoryResponseDto> {
+    this.logger.log(`Creating new category: ${createCategoryDto.tipo} for user ${userId}`);
+    
+    // Montamos o payload que o Java espera
+    const payload = {
+        tipo: createCategoryDto.tipo,
+        ativo: createCategoryDto.status ?? true, // Mapeia 'status' do front para 'ativo' do back
+        freelancerId: userId // INJEÇÃO DO ID
+    };
+
+    return this.backendService.post<CategoryResponseDto>('/categories', payload);
   }
 
   findAll(pagination: PaginationDto): Observable<PaginatedResponseDto<CategoryResponseDto>> {

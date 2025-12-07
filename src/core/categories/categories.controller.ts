@@ -27,6 +27,8 @@ import { CategoryResponseDto } from './dto/category-response.dto';
 import { PaginationDto, PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { Roles } from '../../auth/roles/roles.decorator';
 import { Role } from '../../auth/roles/roles.enum';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import type { AuthenticatedUser } from 'src/auth/strategies/jwt.strategy';
 
 @ApiTags('categories')
 @ApiBearerAuth()
@@ -50,8 +52,8 @@ export class CategoriesController {
     status: 409, 
     description: 'Categoria já existe' 
   })
-  create(@Body() createCategoryDto: CreateCategoryDto): Observable<CategoryResponseDto> {
-    return this.categoriesService.create(createCategoryDto);
+  create(@Body() createCategoryDto: CreateCategoryDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.categoriesService.create(createCategoryDto, user.userId);
   }
 
   @Get()
