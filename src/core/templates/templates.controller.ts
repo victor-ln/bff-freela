@@ -1,31 +1,39 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch, 
-  Param, 
-  Delete, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
   Query,
   ParseIntPipe,
   HttpCode,
   HttpStatus,
-  Res
+  Res,
+  UseInterceptors,
+  UploadedFile,
+  StreamableFile,
 } from '@nestjs/common';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
   ApiBearerAuth,
   ApiQuery,
-  ApiParam
+  ApiParam,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
+import type { Response } from 'express';
 import { TemplatesService } from './templates.service';
 import { CreateTemplateDto } from './dto/create-template.dto';
 import { UpdateTemplateDto } from './dto/update-template.dto';
 import { TemplateResponseDto } from './dto/template-response.dto';
 import { ApproveTemplateDto } from './dto/approve-template.dto';
+import { UploadTemplateDto } from './dto/upload-template.dto';
 import { PaginationDto, PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { Roles } from '../../auth/roles/roles.decorator';
 import { Role } from '../../auth/roles/roles.enum';
@@ -110,23 +118,56 @@ export class TemplatesController {
     return this.templatesService.findOne(id);
   }
 
+  @Post('upload')
+  @Roles(Role.FREELANCER, Role.FREELANCER_PREMIUM, Role.ADMIN)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Upload de template DOCX' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary', description: 'Arquivo DOCX do template' },
+        nome: { type: 'string', description: 'Nome do template' },
+        descricao: { type: 'string', description: 'Descrição do template' },
+        freelancerId: { type: 'number', description: 'ID do freelancer' },
+      },
+      required: ['file', 'nome', 'freelancerId'],
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Template enviado com sucesso',
+    type: TemplateResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Arquivo inválido ou dados incompletos',
+  })
+  uploadTemplate(
+    @UploadedFile() file: any,
+    @Body() uploadDto: UploadTemplateDto,
+  ): Observable<TemplateResponseDto> {
+    return this.templatesService.uploadTemplate(file, uploadDto);
+  }
+
   @Get(':id/download')
   @Roles(Role.FREELANCER, Role.FREELANCER_PREMIUM, Role.ADMIN)
   @ApiOperation({ summary: 'Download do template' })
   @ApiParam({ name: 'id', type: Number, example: 1 })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Download iniciado' 
+  @ApiResponse({
+    status: 200,
+    description: 'Download iniciado',
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Template não encontrado' 
+  @ApiResponse({
+    status: 404,
+    description: 'Template não encontrado',
   })
   downloadTemplate(
     @Param('id', ParseIntPipe) id: number,
-    @Res() res: Response
-  ): Observable<Blob> {
-    return this.templatesService.downloadTemplate(id);
+    @Res() res: Response,
+  ): void {
+    this.templatesService.downloadTemplate(id, res);
   }
 
   @Patch(':id')

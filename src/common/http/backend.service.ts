@@ -3,6 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { Observable, catchError, map } from 'rxjs';
 import { AxiosResponse } from 'axios';
+import FormData from 'form-data';
 
 @Injectable()
 export class BackendService {
@@ -85,11 +86,46 @@ export class BackendService {
   delete<T>(endpoint: string): Observable<T> {
     const url = `${this.backendUrl}${endpoint}`;
     this.logger.log(`DELETE request to: ${url}`);
-    
+
     return this.httpService.delete<T>(url).pipe(
       map((response: AxiosResponse<T>) => response.data),
       catchError((error) => {
         this.logger.error(`Error in DELETE ${url}:`, error.message);
+        throw new HttpException(
+          error.response?.data || 'Erro interno do servidor',
+          error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }),
+    );
+  }
+
+  postMultipart<T>(endpoint: string, formData: FormData): Observable<T> {
+    const url = `${this.backendUrl}${endpoint}`;
+    this.logger.log(`POST multipart request to: ${url}`);
+
+    return this.httpService.post<T>(url, formData, {
+      headers: formData.getHeaders(),
+    }).pipe(
+      map((response: AxiosResponse<T>) => response.data),
+      catchError((error) => {
+        this.logger.error(`Error in POST multipart ${url}:`, error.message);
+        throw new HttpException(
+          error.response?.data || 'Erro interno do servidor',
+          error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }),
+    );
+  }
+
+  getStream(endpoint: string): Observable<AxiosResponse> {
+    const url = `${this.backendUrl}${endpoint}`;
+    this.logger.log(`GET stream request to: ${url}`);
+
+    return this.httpService.get(url, {
+      responseType: 'stream',
+    }).pipe(
+      catchError((error) => {
+        this.logger.error(`Error in GET stream ${url}:`, error.message);
         throw new HttpException(
           error.response?.data || 'Erro interno do servidor',
           error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,

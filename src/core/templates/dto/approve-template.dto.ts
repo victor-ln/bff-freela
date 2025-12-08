@@ -6,7 +6,7 @@ export class ApproveTemplateDto {
   @ApiProperty({
     description: 'Novo status do template',
     enum: TemplateStatus,
-    example: TemplateStatus.ACTIVE,
+    example: TemplateStatus.APPROVED,
   })
   @IsEnum(TemplateStatus)
   status: TemplateStatus;
