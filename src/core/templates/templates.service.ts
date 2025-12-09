@@ -19,7 +19,9 @@ export class TemplatesService {
 
   create(createTemplateDto: CreateTemplateDto): Observable<TemplateResponseDto> {
     this.logger.log(`Creating new template: ${createTemplateDto.nome}`);
-    return this.backendService.post<TemplateResponseDto>('/templates', createTemplateDto);
+    // O Backend espera POST /templates
+    return this.backendService.post<any>('/templates', createTemplateDto)
+      .pipe(map(response => response.dados)); // Extrai o objeto 'dados' do wrapper
   }
 
   findAll(pagination: PaginationDto): Observable<PaginatedResponseDto<TemplateResponseDto>> {
@@ -29,6 +31,7 @@ export class TemplatesService {
       page: pagination.page.toString(),
       limit: pagination.limit.toString(),
       ...(pagination.search && { search: pagination.search }),
+      // O backend Java aceita 'freelancerId' e 'status' aqui também, se necessário passar no futuro
     });
 
     return this.backendService.get<PaginatedResponseDto<TemplateResponseDto>>(`/templates?${queryParams}`);
@@ -36,37 +39,52 @@ export class TemplatesService {
 
   findByStatus(status: TemplateStatus): Observable<TemplateResponseDto[]> {
     this.logger.log(`Fetching templates by status: ${status}`);
+    
+    // Converte o status para o formato esperado pelo Java (ex: APPROVED -> APROVADO)
+    const backendStatus = this.mapStatusToBackend(status);
+
     const queryParams = new URLSearchParams({
-      status: status,
+      status: backendStatus,
       limit: '1000',
     });
+    
     return this.backendService.get<any>(`/templates?${queryParams}`)
-      .pipe(map(response => response.dados?.data || []));
+      .pipe(map(response => response.dados || []));
   }
 
   findApproved(): Observable<TemplateResponseDto[]> {
     this.logger.log('Fetching approved templates');
     const queryParams = new URLSearchParams({
-      status: TemplateStatus.APPROVED,
+      status: 'APROVADO', // Valor fixo esperado pelo Backend Java
       limit: '1000',
     });
     return this.backendService.get<any>(`/templates?${queryParams}`)
-      .pipe(map(response => response.dados?.data || []));
+      .pipe(map(response => response.dados || []));
   }
 
   findOne(id: number): Observable<TemplateResponseDto> {
     this.logger.log(`Fetching template with id: ${id}`);
-    return this.backendService.get<TemplateResponseDto>(`/templates/${id}`);
+    return this.backendService.get<any>(`/templates/${id}`)
+      .pipe(map(response => response.dados));
   }
 
   update(id: number, updateTemplateDto: UpdateTemplateDto): Observable<TemplateResponseDto> {
     this.logger.log(`Updating template with id: ${id}`);
-    return this.backendService.put<TemplateResponseDto>(`/templates/${id}`, updateTemplateDto);
+    return this.backendService.put<any>(`/templates/${id}`, updateTemplateDto)
+      .pipe(map(response => response.dados));
   }
 
   approve(id: number, approveTemplateDto: ApproveTemplateDto): Observable<TemplateResponseDto> {
     this.logger.log(`Changing template ${id} status to: ${approveTemplateDto.status}`);
-    return this.backendService.patch<TemplateResponseDto>(`/templates/${id}/approve`, approveTemplateDto);
+
+    // Mapeia para o valor esperado pelo Java (APROVADO, REJEITADO, EM_REVISAO)
+    const backendStatus = this.mapStatusToBackend(approveTemplateDto.status);
+
+    // Rota correta conforme Java: PATCH /templates/{id}/status
+    // Body esperado: { "status": "VALOR" }
+    return this.backendService.patch<any>(`/templates/${id}/status`, {
+      status: backendStatus
+    }).pipe(map(response => response.dados));
   }
 
   remove(id: number): Observable<{ message: string }> {
@@ -94,7 +112,8 @@ export class TemplatesService {
     formData.append('descricao', uploadDto.descricao || '');
     formData.append('freelancerId', uploadDto.freelancerId.toString());
 
-    return this.backendService.postMultipart<TemplateResponseDto>('/templates/upload', formData);
+    return this.backendService.postMultipart<any>('/templates/upload', formData)
+      .pipe(map(response => response.dados));
   }
 
   downloadTemplate(id: number, res: Response): void {
@@ -115,5 +134,29 @@ export class TemplatesService {
         });
       },
     });
+  }
+
+  /**
+   * Helper para garantir que enviamos os status em Português conforme esperado pelo validador Java:
+   * if (!status.equals("APROVADO") && !status.equals("REJEITADO") && !status.equals("EM_REVISAO"))
+   */
+  private mapStatusToBackend(status: string | TemplateStatus): string {
+    const s = status.toString().toUpperCase();
+    
+    // Se já estiver em português, retorna
+    if (['APROVADO', 'REJEITADO', 'EM_REVISAO'].includes(s)) {
+      return s;
+    }
+
+    // Mapeamento de Inglês/Enum BFF -> Português Backend
+    const map: Record<string, string> = {
+      'APPROVED': 'APROVADO',
+      'REJECTED': 'REJEITADO',
+      'UNDER_REVIEW': 'EM_REVISAO',
+      'REVIEW': 'EM_REVISAO',
+      'PENDING': 'EM_REVISAO' // Fallback comum
+    };
+
+    return map[s] || 'EM_REVISAO';
   }
 }
